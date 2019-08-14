@@ -145,7 +145,7 @@ class Transform {
         return this._pitch / Math.PI * 180;
     }
     set pitch(pitch: number) {
-        const p = clamp(pitch, 0, 60) / 180 * Math.PI;
+        const p = clamp(pitch, 0, 80) / 180 * Math.PI;
         if (this._pitch === p) return;
         this._unmodified = false;
         this._pitch = p;
@@ -156,7 +156,7 @@ class Transform {
         return this._fov / Math.PI * 180;
     }
     set fov(fov: number) {
-        fov = Math.max(0.01, Math.min(60, fov));
+        fov = Math.max(0.01, Math.min(80, fov));
         if (this._fov === fov) return;
         this._unmodified = false;
         this._fov = fov / 180 * Math.PI;
@@ -251,21 +251,43 @@ class Transform {
     ): Array<OverscaledTileID> {
         let z = this.coveringZoomLevel(options);
         const actualZ = z;
+        const minZoom = options.minzoom !== undefined ? options.minzoom : 0; 
 
-        if (options.minzoom !== undefined && z < options.minzoom) return [];
+        if (z < minZoom) return [];
         if (options.maxzoom !== undefined && z > options.maxzoom) z = options.maxzoom;
 
+        const lodOffset = [0.55, 0.66666, 0.75, 0.84, 0.96];
+        const h = this.height / 2;
+        // horizon is relative ( / (h/2)) offset above center of view.
+        const horizon = 1 / (Math.tan(this._fov / 2) * Math.tan(this._pitch));
         const centerCoord = MercatorCoordinate.fromLngLat(this.center);
-        const numTiles = Math.pow(2, z);
-        const centerPoint = new Point(numTiles * centerCoord.x - 0.5, numTiles * centerCoord.y - 0.5);
-        const cornerCoords = [
-            this.pointCoordinate(new Point(0, 0)),
-            this.pointCoordinate(new Point(this.width, 0)),
-            this.pointCoordinate(new Point(this.width, this.height)),
-            this.pointCoordinate(new Point(0, this.height))
-        ];
-        return tileCover(z, cornerCoords, options.reparseOverscaled ? actualZ : z, this._renderWorldCopies)
-            .sort((a, b) => centerPoint.dist(a.canonical) - centerPoint.dist(b.canonical));
+
+        let result = [];
+
+        let bottom = 0;
+        for (let i = 0; i < lodOffset.length && bottom < this.height; i++) {
+            const top = h + Math.min(h * lodOffset[i] * horizon, h);
+            const numTiles = Math.pow(2, z);
+            const centerPoint = new Point(numTiles * centerCoord.x - 0.5, numTiles * centerCoord.y - 0.5);
+            const cornerCoords = [
+                this.pointCoordinate(new Point(0, this.height - top)),
+                this.pointCoordinate(new Point(this.width, this.height - top)),
+                this.pointCoordinate(new Point(this.width, this.height - bottom)),
+                this.pointCoordinate(new Point(0, this.height - bottom))
+            ];
+            const cover = tileCover(z, cornerCoords, options.reparseOverscaled ? actualZ : z, this._renderWorldCopies)
+                .sort((a, b) => centerPoint.dist(a.canonical) - centerPoint.dist(b.canonical));
+            bottom = top + 1;
+            if (z === minZoom) i = lodOffset.length - 1; // Performance issue. Don't do next LOD.
+            z--;
+            if (i === 0) {
+                if (top === this.height) return cover;
+                result = cover;
+                continue;
+            }
+            result = result.concat(cover);
+        }
+        return result;
     }
 
     resize(width: number, height: number) {

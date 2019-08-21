@@ -30,11 +30,12 @@ import heatmap from './draw_heatmap';
 import line from './draw_line';
 import fill from './draw_fill';
 import fillExtrusion from './draw_fill_extrusion';
-import hillshade from './draw_hillshade';
+import { drawHillshade, prepareDEMTextures } from './draw_hillshade';
 import raster from './draw_raster';
 import background from './draw_background';
 import debug from './draw_debug';
 import custom from './draw_custom';
+import createGrid from './create_grid'
 
 const draw = {
     symbol,
@@ -43,11 +44,12 @@ const draw = {
     line,
     fill,
     'fill-extrusion': fillExtrusion,
-    hillshade,
+    'hillshade': drawHillshade,
     raster,
     background,
     debug,
-    custom
+    custom,
+    'elevation' : prepareDEMTextures
 };
 
 import type Transform from '../geo/transform';
@@ -101,6 +103,9 @@ class Painter {
     viewportSegments: SegmentVector;
     quadTriangleIndexBuffer: IndexBuffer;
     tileBorderIndexBuffer: IndexBuffer;
+    triangleGridBuffer: VertexBuffer;
+    triangleGridIndexBuffer: IndexBuffer;
+    triangleGridSegments: SegmentVector;
     _tileClippingMaskIDs: { [number]: number };
     stencilClearMode: StencilMode;
     style: Style;
@@ -119,6 +124,7 @@ class Painter {
     cache: { [string]: Program<*> };
     crossTileSymbolIndex: CrossTileSymbolIndex;
     symbolFadeChange: number;
+    zeroTexture: Texture;
 
     constructor(gl: WebGLRenderingContext, transform: Transform) {
         this.context = new Context(gl);
@@ -210,8 +216,14 @@ class Painter {
         quadTriangleIndices.emplaceBack(2, 1, 3);
         this.quadTriangleIndexBuffer = context.createIndexBuffer(quadTriangleIndices);
 
+        const [triangleGridArray, triangleGridIndices] = createGrid(128);
+        this.triangleGridBuffer = context.createVertexBuffer(triangleGridArray, rasterBoundsAttributes.members);
+        this.triangleGridIndexBuffer = context.createIndexBuffer(triangleGridIndices);
+        this.triangleGridSegments = SegmentVector.simpleSegment(0, 0, triangleGridArray.length, triangleGridIndices.length);
+
         const gl = this.context.gl;
         this.stencilClearMode = new StencilMode({ func: gl.ALWAYS, mask: 0 }, 0x0, 0xFF, gl.ZERO, gl.ZERO, gl.ZERO);
+        this.zeroTexture = new Texture(context, new ImageData(1, 1), gl.RGBA);
     }
 
     /*

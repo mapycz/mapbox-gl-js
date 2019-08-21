@@ -68,10 +68,25 @@ function drawRaster(painter: Painter, sourceCache: SourceCache, layer: RasterSty
                 uniformValues, layer.id, source.boundsBuffer,
                 painter.quadTriangleIndexBuffer, source.boundsSegments);
         } else if (tile.maskedBoundsBuffer && tile.maskedIndexBuffer && tile.segments) {
+            const elevation = painter.style.sourceCaches['mapbox-dem'];
+            const boundsBuffer = elevation ? painter.triangleGridBuffer : tile.maskedBoundsBuffer;
+            const indexBuffer = elevation ? painter.triangleGridIndexBuffer : tile.maskedIndexBuffer;
+            const segments = elevation ? painter.triangleGridSegments : tile.segments;
+
+            let heightMap = painter.zeroTexture;
+            if (elevation) {
+                const demTile = elevation.getTile(coord);
+                // TODO: explain why disabled fading makes sense here - only cover tiles are
+                // retained in SourceCache update. See usage of isRasterType there. 
+                if (!(demTile && demTile.demTexture)) continue;
+                heightMap = demTile.demTexture;
+            }
+            context.activeTexture.set(gl.TEXTURE2);
+            heightMap.bind(gl.NEAREST, gl.CLAMP_TO_EDGE, gl.LINEAR_MIPMAP_NEAREST);
+
             program.draw(context, gl.TRIANGLES, depthMode, stencilMode, colorMode, CullFaceMode.disabled,
-                uniformValues, layer.id, tile.maskedBoundsBuffer,
-                tile.maskedIndexBuffer, tile.segments, layer.paint,
-                painter.transform.zoom);
+                uniformValues, layer.id, boundsBuffer, indexBuffer, segments,
+                layer.paint, painter.transform.zoom);
         } else {
             program.draw(context, gl.TRIANGLES, depthMode, stencilMode, colorMode, CullFaceMode.disabled,
                 uniformValues, layer.id, painter.rasterBoundsBuffer,

@@ -1,5 +1,6 @@
 // @flow
 
+import assert from 'assert';
 import Texture from './texture';
 import StencilMode from '../gl/stencil_mode';
 import DepthMode from '../gl/depth_mode';
@@ -13,8 +14,6 @@ import type Painter from './painter';
 import type SourceCache from '../source/source_cache';
 import type HillshadeStyleLayer from '../style/style_layer/hillshade_style_layer';
 import type {OverscaledTileID} from '../source/tile_id';
-
-export default drawHillshade;
 
 function drawHillshade(painter: Painter, sourceCache: SourceCache, layer: HillshadeStyleLayer, tileIDs: Array<OverscaledTileID>) {
     if (painter.renderPass !== 'offscreen' && painter.renderPass !== 'translucent') return;
@@ -30,7 +29,6 @@ function drawHillshade(painter: Painter, sourceCache: SourceCache, layer: Hillsh
         const tile = sourceCache.getTile(tileID);
         if (tile.needsHillshadePrepare && painter.renderPass === 'offscreen') {
             prepareHillshade(painter, tile, layer, sourceMaxZoom, depthMode, stencilMode, colorMode);
-            continue;
         } else if (painter.renderPass === 'translucent') {
             renderHillshade(painter, tile, layer, depthMode, stencilMode, colorMode);
         }
@@ -63,32 +61,53 @@ function renderHillshade(painter, tile, layer, depthMode, stencilMode, colorMode
     }
 }
 
+function prepareDEMTextures(painter: Painter, sourceCache: SourceCache, layer: HillshadeStyleLayer, tileIDs: Array<OverscaledTileID>) {
+    if (painter.renderPass !== 'offscreen') return;
+
+    for (const tileID of tileIDs) {
+        const tile = sourceCache.getTile(tileID);
+        if (painter.renderPass === 'offscreen' && !tile.demTexture) {
+            // No need for using tile.needsHillshadePrepare - _backfillDEM or no upload only once.
+            prepareTexture(painter, tile);
+        }
+    }
+}
+
+// Return true means that tile.demTexture contains DEM data and that it is bound
+// to texture unit 1.
+function prepareTexture(painter, tile) {
+    const dem = tile.dem;
+    if (!dem || !dem.data) return false;
+
+    const context = painter.context;
+    const gl = context.gl;
+
+    const textureStride = dem.stride;
+    const pixelData = dem.getPixels();
+    context.activeTexture.set(gl.TEXTURE1);
+
+    context.pixelStoreUnpackPremultiplyAlpha.set(false);
+    tile.demTexture = tile.demTexture || painter.getTileTexture(textureStride);
+    if (tile.demTexture) {
+        const demTexture = tile.demTexture;
+        demTexture.update(pixelData, { premultiply: false });
+        demTexture.bind(gl.NEAREST, gl.CLAMP_TO_EDGE);
+    } else {
+        tile.demTexture = new Texture(context, pixelData, gl.RGBA, { premultiply: false });
+        tile.demTexture.bind(gl.NEAREST, gl.CLAMP_TO_EDGE);
+    }
+    return true;
+}
+
 // hillshade rendering is done in two steps. the prepare step first calculates the slope of the terrain in the x and y
 // directions for each pixel, and saves those values to a framebuffer texture in the r and g channels.
 function prepareHillshade(painter, tile, layer, sourceMaxZoom, depthMode, stencilMode, colorMode) {
-    const context = painter.context;
-    const gl = context.gl;
-    const dem = tile.dem;
-    if (dem && dem.data) {
-        const tileSize = dem.dim;
-        const textureStride = dem.stride;
-
-        const pixelData = dem.getPixels();
-        context.activeTexture.set(gl.TEXTURE1);
-
-        context.pixelStoreUnpackPremultiplyAlpha.set(false);
-        tile.demTexture = tile.demTexture || painter.getTileTexture(textureStride);
-        if (tile.demTexture) {
-            const demTexture = tile.demTexture;
-            demTexture.update(pixelData, { premultiply: false });
-            demTexture.bind(gl.NEAREST, gl.CLAMP_TO_EDGE);
-        } else {
-            tile.demTexture = new Texture(context, pixelData, gl.RGBA, { premultiply: false });
-            tile.demTexture.bind(gl.NEAREST, gl.CLAMP_TO_EDGE);
-        }
+    if (prepareTexture(painter, tile)) {
+        const context = painter.context;
+        const gl = context.gl;
+        const tileSize = tile.dem.dim;
 
         context.activeTexture.set(gl.TEXTURE0);
-
         let fbo = tile.fbo;
 
         if (!fbo) {
@@ -111,3 +130,5 @@ function prepareHillshade(painter, tile, layer, sourceMaxZoom, depthMode, stenci
         tile.needsHillshadePrepare = false;
     }
 }
+
+export { drawHillshade, prepareDEMTextures };

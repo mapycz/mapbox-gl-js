@@ -145,7 +145,7 @@ class Transform {
         return this._pitch / Math.PI * 180;
     }
     set pitch(pitch: number) {
-        const p = clamp(pitch, 0, 80) / 180 * Math.PI;
+        const p = clamp(pitch, 0, 85) / 180 * Math.PI;
         if (this._pitch === p) return;
         this._unmodified = false;
         this._pitch = p;
@@ -156,7 +156,7 @@ class Transform {
         return this._fov / Math.PI * 180;
     }
     set fov(fov: number) {
-        fov = Math.max(0.01, Math.min(80, fov));
+        fov = Math.max(0.01, Math.min(85, fov));
         if (this._fov === fov) return;
         this._unmodified = false;
         this._fov = fov / 180 * Math.PI;
@@ -256,7 +256,7 @@ class Transform {
         if (z < minZoom) return [];
         if (options.maxzoom !== undefined && z > options.maxzoom) z = options.maxzoom;
 
-        const lodOffset = [0.55, 0.66666, 0.75, 0.84, 0.96];
+        const lodOffset = [0.55, 0.66666, 0.75, 0.84, 0.93];
         const h = this.height / 2;
         // horizon is relative ( / (h/2)) offset above center of view.
         const horizon = 1 / (Math.tan(this._fov / 2) * Math.tan(this._pitch));

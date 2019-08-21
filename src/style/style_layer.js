@@ -100,6 +100,8 @@ class StyleLayer extends Evented {
             }
 
             this._transitioningPaint = this._transitionablePaint.untransitioned();
+        } else {
+            this._transitioningPaint = new Transitioning({defaultTransitioningPropertyValues: null, defaultPossiblyEvaluatedValues: null});
         }
     }
 

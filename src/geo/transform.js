@@ -256,7 +256,7 @@ class Transform {
         if (z < minZoom) return [];
         if (options.maxzoom !== undefined && z > options.maxzoom) z = options.maxzoom;
 
-        const lodOffset = [0.55, 0.66666, 0.75, 0.84, 0.93];
+        const lodOffset = [0.58, 0.66666, 0.75, 0.84, 0.93];
         const h = this.height / 2;
         // horizon is relative ( / (h/2)) offset above center of view.
         const horizon = 1 / (Math.tan(this._fov / 2) * Math.tan(this._pitch));

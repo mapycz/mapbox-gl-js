@@ -36,6 +36,7 @@ import background from './draw_background';
 import debug from './draw_debug';
 import custom from './draw_custom';
 import createGrid from './create_grid'
+import { RGBAImage } from '../util/image';
 
 const draw = {
     symbol,
@@ -223,7 +224,7 @@ class Painter {
 
         const gl = this.context.gl;
         this.stencilClearMode = new StencilMode({ func: gl.ALWAYS, mask: 0 }, 0x0, 0xFF, gl.ZERO, gl.ZERO, gl.ZERO);
-        this.zeroTexture = new Texture(context, new ImageData(1, 1), gl.RGBA);
+        this.zeroTexture = new Texture(context, new RGBAImage({width: 1, height: 1}), gl.RGBA);
     }
 
     /*

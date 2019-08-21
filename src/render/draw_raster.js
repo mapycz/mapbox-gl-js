@@ -17,8 +17,13 @@ import type {OverscaledTileID} from '../source/tile_id';
 export default drawRaster;
 
 function drawRaster(painter: Painter, sourceCache: SourceCache, layer: RasterStyleLayer, coords: Array<OverscaledTileID>) {
-    if (painter.renderPass !== 'translucent') return;
-    if (layer.paint.get('raster-opacity') === 0) return;
+    const rasterOpacity = layer.paint.get('raster-opacity');
+    if (rasterOpacity === 0) return;
+
+    // Temporary, using it in opaque pass with elevation.
+    const elevation = painter.style.sourceCaches['mapbox-dem'];
+    const rasterPass = (rasterOpacity === 1 && elevation) ? 'opaque' : 'translucent';
+    if (painter.renderPass !== rasterPass) return;
 
     const context = painter.context;
     const gl = context.gl;
@@ -30,10 +35,13 @@ function drawRaster(painter: Painter, sourceCache: SourceCache, layer: RasterSty
     const minTileZ = coords.length && coords[0].overscaledZ;
     const align = !painter.options.moving;
     for (const coord of coords) {
-        // Set the lower zoom level to sublayer 0, and higher zoom levels to higher sublayers
-        // Use gl.LESS to prevent double drawing in areas where tiles overlap.
-        const depthMode = painter.depthModeForSublayer(coord.overscaledZ - minTileZ,
-            layer.paint.get('raster-opacity') === 1 ? DepthMode.ReadWrite : DepthMode.ReadOnly, gl.LESS);
+
+        const depthMode = (elevation) ?
+            new DepthMode(painter.context.gl.LEQUAL, DepthMode.ReadWrite, painter.depthRangeFor3D) :
+            // Set the lower zoom level to sublayer 0, and higher zoom levels to higher sublayers
+            // Use gl.LESS to prevent double drawing in areas where tiles overlap.
+            painter.depthModeForSublayer(coord.overscaledZ - minTileZ,
+            rasterOpacity === 1 ? DepthMode.ReadWrite : DepthMode.ReadOnly, gl.LESS);
 
         const tile = sourceCache.getTile(coord);
         const posMatrix = painter.transform.calculatePosMatrix(coord.toUnwrapped(), align);
@@ -61,6 +69,17 @@ function drawRaster(painter: Painter, sourceCache: SourceCache, layer: RasterSty
             tile.texture.bind(textureFilter, gl.CLAMP_TO_EDGE, gl.LINEAR_MIPMAP_NEAREST);
         }
 
+        let heightMap = painter.zeroTexture;
+        if (elevation) {
+            const demTile = elevation.getTile(coord);
+            // TODO: explain why this makes sense here - only cover tiles are
+            // retained in SourceCache update. See usage of isRasterType there. 
+            if (!(demTile && demTile.demTexture)) continue;
+            heightMap = demTile.demTexture;
+        }
+        context.activeTexture.set(gl.TEXTURE2);
+        heightMap.bind(gl.NEAREST, gl.CLAMP_TO_EDGE, gl.LINEAR_MIPMAP_NEAREST);
+
         const uniformValues = rasterUniformValues(posMatrix, parentTL || [0, 0], parentScaleBy || 1, fade, layer);
 
         if (source instanceof ImageSource) {
@@ -68,21 +87,9 @@ function drawRaster(painter: Painter, sourceCache: SourceCache, layer: RasterSty
                 uniformValues, layer.id, source.boundsBuffer,
                 painter.quadTriangleIndexBuffer, source.boundsSegments);
         } else if (tile.maskedBoundsBuffer && tile.maskedIndexBuffer && tile.segments) {
-            const elevation = painter.style.sourceCaches['mapbox-dem'];
             const boundsBuffer = elevation ? painter.triangleGridBuffer : tile.maskedBoundsBuffer;
             const indexBuffer = elevation ? painter.triangleGridIndexBuffer : tile.maskedIndexBuffer;
             const segments = elevation ? painter.triangleGridSegments : tile.segments;
-
-            let heightMap = painter.zeroTexture;
-            if (elevation) {
-                const demTile = elevation.getTile(coord);
-                // TODO: explain why disabled fading makes sense here - only cover tiles are
-                // retained in SourceCache update. See usage of isRasterType there. 
-                if (!(demTile && demTile.demTexture)) continue;
-                heightMap = demTile.demTexture;
-            }
-            context.activeTexture.set(gl.TEXTURE2);
-            heightMap.bind(gl.NEAREST, gl.CLAMP_TO_EDGE, gl.LINEAR_MIPMAP_NEAREST);
 
             program.draw(context, gl.TRIANGLES, depthMode, stencilMode, colorMode, CullFaceMode.disabled,
                 uniformValues, layer.id, boundsBuffer, indexBuffer, segments,

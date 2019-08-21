@@ -22,6 +22,6 @@ void main() {
     vec4 dem = texture2D(u_image2, v_pos0);
     // TODO: 1x1 zero elevation texture (r = 0, g = 0, b = 1) to avoid length == 0 check.
     float elevation = dot(dem, dem) == 0.0 ?
-        0.0 : (dot(dem, vec4(255.0, 255.0 * 256.0, 255.0 * 256.0 *256.0, 0.0)) - 65536.0) * 15.0;
+        0.0 : (dot(dem, vec4(255.0, 255.0 * 256.0, 255.0 * 256.0 *256.0, 0.0)) - 65536.0) * 2.5; // Exaggerate, a bit.
     gl_Position = u_matrix * vec4(a_pos, elevation, 1);
 }

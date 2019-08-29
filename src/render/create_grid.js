@@ -20,7 +20,7 @@ import EXTENT from '../data/extent';
  * @param {number} count Count of rows and columns
  * @private
  */
-export default function createGrid(count: Number): [RasterBoundsArray, TriangleIndexArray] {
+export default function createGrid(count: number): [RasterBoundsArray, TriangleIndexArray] {
     const boundsArray = new RasterBoundsArray();
     const indexArray = new TriangleIndexArray();
     boundsArray.reserve(count * count);

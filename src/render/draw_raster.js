@@ -8,6 +8,8 @@ import StencilMode from '../gl/stencil_mode';
 import DepthMode from '../gl/depth_mode';
 import CullFaceMode from '../gl/cull_face_mode';
 import { rasterUniformValues } from './program/raster_program';
+import Texture from './texture';
+import assert from 'assert';
 
 import type Painter from './painter';
 import type SourceCache from '../source/source_cache';
@@ -69,18 +71,20 @@ function drawRaster(painter: Painter, sourceCache: SourceCache, layer: RasterSty
             tile.texture.bind(textureFilter, gl.CLAMP_TO_EDGE, gl.LINEAR_MIPMAP_NEAREST);
         }
 
-        let heightMap = painter.zeroTexture;
+        context.activeTexture.set(gl.TEXTURE2);
+        let demUnpack = [0, 0, 0, 0];
+        let demTexture = painter.zeroTexture;
+        // If no elevation data, zero dem_unpack in vertex shader is setting sampled elevation to zero.
         if (elevation) {
             const demTile = elevation.getTile(coord);
-            // TODO: explain why this makes sense here - only cover tiles are
-            // retained in SourceCache update. See usage of isRasterType there. 
-            if (!(demTile && demTile.demTexture)) continue;
-            heightMap = demTile.demTexture;
+            if (!demTile || !demTile.demTexture) continue;
+            assert(demTile.dem);
+            demTexture = ((demTile.demTexture: any): Texture);
+            demUnpack = demTile.dem.getUnpackVector();
         }
-        context.activeTexture.set(gl.TEXTURE2);
-        heightMap.bind(gl.NEAREST, gl.CLAMP_TO_EDGE, gl.LINEAR_MIPMAP_NEAREST);
-
-        const uniformValues = rasterUniformValues(posMatrix, parentTL || [0, 0], parentScaleBy || 1, fade, layer);
+        demTexture.bind(gl.NEAREST, gl.CLAMP_TO_EDGE, gl.LINEAR_MIPMAP_NEAREST);
+        
+        const uniformValues = rasterUniformValues(posMatrix, parentTL || [0, 0], parentScaleBy || 1, fade, layer, demUnpack);
 
         if (source instanceof ImageSource) {
             program.draw(context, gl.TRIANGLES, depthMode, stencilMode, colorMode, CullFaceMode.disabled,

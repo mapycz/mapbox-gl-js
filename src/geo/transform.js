@@ -251,7 +251,7 @@ class Transform {
     ): Array<OverscaledTileID> {
         let z = this.coveringZoomLevel(options);
         const actualZ = z;
-        const minZoom = options.minzoom !== undefined ? options.minzoom : 0; 
+        const minZoom = options.minzoom !== undefined ? options.minzoom : 0;
 
         if (z < minZoom) return [];
         if (options.maxzoom !== undefined && z > options.maxzoom) z = options.maxzoom;

@@ -13,6 +13,10 @@ class ElevationStyleLayer extends StyleLayer {
     hasOffscreenPass() {
         return true;
     }
+
+    recalculate() {}
+    updateTransitions() {}
+    hasTransition() {}
 }
 
 export default ElevationStyleLayer;

@@ -35,7 +35,7 @@ import raster from './draw_raster';
 import background from './draw_background';
 import debug from './draw_debug';
 import custom from './draw_custom';
-import createGrid from './create_grid'
+import createGrid from './create_grid';
 import { RGBAImage } from '../util/image';
 
 const draw = {

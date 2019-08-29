@@ -5,7 +5,8 @@ import {
     Uniform1f,
     Uniform2f,
     Uniform3f,
-    UniformMatrix4f
+    UniformMatrix4f,
+    Uniform4f
 } from '../uniform_binding';
 
 import type Context from '../../gl/context';
@@ -21,7 +22,8 @@ export type RasterUniformsType = {|
     'u_opacity': Uniform1f,
     'u_image0': Uniform1i,
     'u_image1': Uniform1i,
-    'u_image2': Uniform1i,
+    'u_dem': Uniform1i,
+    'u_dem_unpack': Uniform4f,
     'u_brightness_low': Uniform1f,
     'u_brightness_high': Uniform1f,
     'u_saturation_factor': Uniform1f,
@@ -38,7 +40,8 @@ const rasterUniforms = (context: Context, locations: UniformLocations): RasterUn
     'u_opacity': new Uniform1f(context, locations.u_opacity),
     'u_image0': new Uniform1i(context, locations.u_image0),
     'u_image1': new Uniform1i(context, locations.u_image1),
-    'u_image2': new Uniform1i(context, locations.u_image2),
+    'u_dem': new Uniform1i(context, locations.u_dem),
+    'u_dem_unpack': new Uniform4f(context, locations.u_dem_unpack),
     'u_brightness_low': new Uniform1f(context, locations.u_brightness_low),
     'u_brightness_high': new Uniform1f(context, locations.u_brightness_high),
     'u_saturation_factor': new Uniform1f(context, locations.u_saturation_factor),
@@ -51,7 +54,8 @@ const rasterUniformValues = (
     parentTL: [number, number],
     parentScaleBy: number,
     fade: {mix: number, opacity: number},
-    layer: RasterStyleLayer
+    layer: RasterStyleLayer,
+    elevationUnpack: [number, number, number, number]
 ): UniformValues<RasterUniformsType> => ({
     'u_matrix': matrix,
     'u_tl_parent': parentTL,
@@ -61,7 +65,8 @@ const rasterUniformValues = (
     'u_opacity': fade.opacity * layer.paint.get('raster-opacity'),
     'u_image0': 0,
     'u_image1': 1,
-    'u_image2': 2,
+    'u_dem': 2,
+    'u_dem_unpack': elevationUnpack,
     'u_brightness_low': layer.paint.get('raster-brightness-min'),
     'u_brightness_high': layer.paint.get('raster-brightness-max'),
     'u_saturation_factor': saturationFactor(layer.paint.get('raster-saturation')),

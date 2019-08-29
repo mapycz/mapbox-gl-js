@@ -2,7 +2,8 @@ uniform mat4 u_matrix;
 uniform vec2 u_tl_parent;
 uniform float u_scale_parent;
 uniform float u_buffer_scale;
-uniform sampler2D u_image2;
+uniform sampler2D u_dem;
+uniform vec4 u_dem_unpack;
 
 attribute vec2 a_pos;
 attribute vec2 a_texture_pos;
@@ -19,9 +20,9 @@ void main() {
     v_pos0 = (((a_texture_pos / 8192.0) - 0.5) / u_buffer_scale ) + 0.5;
     v_pos1 = (v_pos0 * u_scale_parent) + u_tl_parent;
 
-    vec4 dem = texture2D(u_image2, v_pos0);
-    // TODO: 1x1 zero elevation texture (r = 0, g = 0, b = 1) to avoid length == 0 check.
-    float elevation = dot(dem, dem) == 0.0 ?
-        0.0 : (dot(dem, vec4(255.0, 255.0 * 256.0, 255.0 * 256.0 *256.0, 0.0)) - 65536.0) * 2.5; // Exaggerate, a bit.
+    vec4 dem = texture2D(u_dem, v_pos0) * 255.0;
+    // Convert encoded elevation value to meters
+    dem.a = -1.0;
+    float elevation = dot(dem, u_dem_unpack) * 2.5; // Exaggerate, a bit.
     gl_Position = u_matrix * vec4(a_pos, elevation, 1);
 }

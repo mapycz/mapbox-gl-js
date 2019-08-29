@@ -1,6 +1,5 @@
 // @flow
 
-import assert from 'assert';
 import Texture from './texture';
 import StencilMode from '../gl/stencil_mode';
 import DepthMode from '../gl/depth_mode';
@@ -66,18 +65,18 @@ function prepareDEMTextures(painter: Painter, sourceCache: SourceCache, layer: H
 
     for (const tileID of tileIDs) {
         const tile = sourceCache.getTile(tileID);
-        if (painter.renderPass === 'offscreen' && !tile.demTexture) {
+        const dem = tile.dem;
+        if (painter.renderPass === 'offscreen' && !tile.demTexture && dem) {
             // No need for using tile.needsHillshadePrepare - _backfillDEM or no upload only once.
-            prepareTexture(painter, tile);
+            prepareTexture(painter, tile, dem);
         }
     }
 }
 
 // Return true means that tile.demTexture contains DEM data and that it is bound
 // to texture unit 1.
-function prepareTexture(painter, tile) {
-    const dem = tile.dem;
-    if (!dem || !dem.data) return false;
+function prepareTexture(painter, tile, dem) {
+    if (!dem.data) return false;
 
     const context = painter.context;
     const gl = context.gl;
@@ -102,10 +101,13 @@ function prepareTexture(painter, tile) {
 // hillshade rendering is done in two steps. the prepare step first calculates the slope of the terrain in the x and y
 // directions for each pixel, and saves those values to a framebuffer texture in the r and g channels.
 function prepareHillshade(painter, tile, layer, sourceMaxZoom, depthMode, stencilMode, colorMode) {
-    if (prepareTexture(painter, tile)) {
+    const dem = tile.dem;
+    if (!dem) return false;
+
+    if (prepareTexture(painter, tile, dem)) {
         const context = painter.context;
         const gl = context.gl;
-        const tileSize = tile.dem.dim;
+        const tileSize = dem.dim;
 
         context.activeTexture.set(gl.TEXTURE0);
         let fbo = tile.fbo;

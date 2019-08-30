@@ -34,7 +34,7 @@
 var style = {
     "version": 8,
     "sources": {
-        "mapbox-dem": {
+        "mapbox-elevation": {
             "type": "raster-dem",
             "url": "mapbox://mapbox.terrain-rgb",
             "tileSize": 512
@@ -83,7 +83,7 @@ map.addControl(new mapboxgl.ScaleControl());
 map.on('load', function() {
     map.addLayer({
         "id": "dem-elevation",
-        "source": "mapbox-dem",
+        "source": "mapbox-elevation",
         "type": "elevation"
     });
 });

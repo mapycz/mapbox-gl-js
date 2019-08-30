@@ -15,6 +15,7 @@ import type Painter from './painter';
 import type SourceCache from '../source/source_cache';
 import type RasterStyleLayer from '../style/style_layer/raster_style_layer';
 import type {OverscaledTileID} from '../source/tile_id';
+import type DEMData from '../data/dem_data';
 
 export default drawRaster;
 
@@ -23,7 +24,7 @@ function drawRaster(painter: Painter, sourceCache: SourceCache, layer: RasterSty
     if (rasterOpacity === 0) return;
 
     // Temporary, using it in opaque pass with elevation.
-    const elevation = painter.style.sourceCaches['mapbox-dem'];
+    const elevation = painter.style.sourceCaches['mapbox-elevation'];
     const rasterPass = (rasterOpacity === 1 && elevation) ? 'opaque' : 'translucent';
     if (painter.renderPass !== rasterPass) return;
 
@@ -62,11 +63,10 @@ function drawRaster(painter: Painter, sourceCache: SourceCache, layer: RasterSty
 
         context.activeTexture.set(gl.TEXTURE1);
 
-        if (parentTile) {
+        if (parentTile && !elevation) {
             parentTile.texture.bind(textureFilter, gl.CLAMP_TO_EDGE, gl.LINEAR_MIPMAP_NEAREST);
             parentScaleBy = Math.pow(2, parentTile.tileID.overscaledZ - tile.tileID.overscaledZ);
             parentTL = [tile.tileID.canonical.x * parentScaleBy % 1, tile.tileID.canonical.y * parentScaleBy % 1];
-
         } else {
             tile.texture.bind(textureFilter, gl.CLAMP_TO_EDGE, gl.LINEAR_MIPMAP_NEAREST);
         }
@@ -74,18 +74,22 @@ function drawRaster(painter: Painter, sourceCache: SourceCache, layer: RasterSty
         context.activeTexture.set(gl.TEXTURE2);
         let demUnpack = [0, 0, 0, 0];
         let demTexture = painter.zeroTexture;
+        let demTLScale;
         // If no elevation data, zero dem_unpack in vertex shader is setting sampled elevation to zero.
         if (elevation) {
-            const demTile = elevation.getTile(coord);
+            // We use 128x128 uniform grid and load 512x512 dem data. Overscale 2 zoom levels
+            // up to reduce bytesize of dem data used.
+            const demTile = elevation.findLoadedParent(coord.scaledTo(coord.overscaledZ - 1), 0);
             if (!demTile || !demTile.demTexture) continue;
-            assert(demTile.dem);
             demTexture = ((demTile.demTexture: any): Texture);
-            demUnpack = demTile.dem.getUnpackVector();
+            assert(demTile.dem);
+            demUnpack = ((demTile.dem: any): DEMData).getUnpackVector();
+            const demScaleBy = Math.pow(2, demTile.tileID.overscaledZ - tile.tileID.overscaledZ);
+            demTLScale = [tile.tileID.canonical.x * demScaleBy % 1, tile.tileID.canonical.y * demScaleBy % 1, demScaleBy];
         }
         demTexture.bind(gl.NEAREST, gl.CLAMP_TO_EDGE, gl.LINEAR_MIPMAP_NEAREST);
-        
-        const uniformValues = rasterUniformValues(posMatrix, parentTL || [0, 0], parentScaleBy || 1, fade, layer, demUnpack);
-
+        const uniformValues = rasterUniformValues(posMatrix, parentTL || [0, 0], parentScaleBy || 1, fade, layer,
+                                                  demUnpack, demTLScale || [0, 0, 0]);
         if (source instanceof ImageSource) {
             program.draw(context, gl.TRIANGLES, depthMode, stencilMode, colorMode, CullFaceMode.disabled,
                 uniformValues, layer.id, source.boundsBuffer,

@@ -459,6 +459,15 @@ class SourceCache extends Evented {
         this.transform = transform;
         if (!this._sourceLoaded || this._paused) { return; }
 
+        let maxzoom = this._source.maxzoom;
+        if (this.id === 'mapbox-elevation') {
+            // We use 128x128 uniform grid and load 512x512 dem data. Overscale 2 zoom levels
+            // up to reduce bytesize of dem data used.
+            maxzoom = Math.min(this._source.maxzoom, transform.coveringZoomLevel({
+                roundZoom: this._source.roundZoom,
+                tileSize: this._source.tileSize}) - 2);
+        }
+
         this.updateCacheSize(transform);
         this.handleWrapJump(this.transform.center.lng);
 
@@ -476,7 +485,7 @@ class SourceCache extends Evented {
             idealTileIDs = transform.coveringTiles({
                 tileSize: this._source.tileSize,
                 minzoom: this._source.minzoom,
-                maxzoom: this._source.maxzoom,
+                maxzoom,
                 roundZoom: this._source.roundZoom,
                 reparseOverscaled: this._source.reparseOverscaled
             });

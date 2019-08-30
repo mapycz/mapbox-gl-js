@@ -4,6 +4,7 @@ uniform float u_scale_parent;
 uniform float u_buffer_scale;
 uniform sampler2D u_dem;
 uniform vec4 u_dem_unpack;
+uniform vec3 u_tl_scale_dem;
 
 attribute vec2 a_pos;
 attribute vec2 a_texture_pos;
@@ -20,7 +21,8 @@ void main() {
     v_pos0 = (((a_texture_pos / 8192.0) - 0.5) / u_buffer_scale ) + 0.5;
     v_pos1 = (v_pos0 * u_scale_parent) + u_tl_parent;
 
-    vec4 dem = texture2D(u_dem, v_pos0) * 255.0;
+    vec2 pos = (v_pos0 * u_tl_scale_dem.z) + u_tl_scale_dem.xy;
+    vec4 dem = texture2D(u_dem, pos) * 255.0;
     // Convert encoded elevation value to meters
     dem.a = -1.0;
     float elevation = dot(dem, u_dem_unpack) * 2.5; // Exaggerate, a bit.

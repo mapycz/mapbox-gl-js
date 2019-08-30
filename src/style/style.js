@@ -383,7 +383,7 @@ class Style extends Evented {
             const layer = this._layers[layerId];
 
             layer.recalculate(parameters);
-            if ((!layer.isHidden(parameters.zoom) && layer.source) || layer.type === 'elevation') {
+            if (!layer.isHidden(parameters.zoom) && layer.source) {
                 this.sourceCaches[layer.source].used = true;
             }
         }
@@ -599,7 +599,7 @@ class Style extends Evented {
             }
 
             // this layer is not in the style.layers array, so we pass an impossible array index
-            if (layerObject.type !== 'elevation' && this._validate(validateStyle.layer,
+            if (this._validate(validateStyle.layer,
                 `layers.${id}`, layerObject, {arrayIndex: -1}, options)) return;
 
             layer = createStyleLayer(layerObject);

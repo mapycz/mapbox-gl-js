@@ -392,6 +392,23 @@ export type HillshadeLayerSpecification = {|
     |}
 |}
 
+export type ElevationLayerSpecification = {|
+    "id": string,
+    "type": "elevation",
+    "metadata"?: mixed,
+    "source": string,
+    "source-layer"?: string,
+    "minzoom"?: number,
+    "maxzoom"?: number,
+    "filter"?: FilterSpecification,
+    "layout"?: {|
+        "visibility"?: "visible" | "none"
+    |},
+    "paint"?: {|
+
+    |}
+|}
+
 export type BackgroundLayerSpecification = {|
     "id": string,
     "type": "background",
@@ -417,5 +434,6 @@ export type LayerSpecification =
     | FillExtrusionLayerSpecification
     | RasterLayerSpecification
     | HillshadeLayerSpecification
+    | ElevationLayerSpecification
     | BackgroundLayerSpecification;
 

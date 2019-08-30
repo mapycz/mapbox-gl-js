@@ -544,6 +544,17 @@
             }
           }
         },
+        "elevation": {
+          "doc": "3D terrain extrusion based on DEM data. Currently, the implementation only supports Mapbox Terrain RGB and Mapzen Terrarium tiles.",
+          "sdk-support": {
+            "basic functionality": {
+              "js": "todo",
+              "android": "todo",
+              "ios": "todo",
+              "macos": "todo"
+            }
+          }
+        },
         "background": {
           "doc": "The background color or pattern of the map.",
           "sdk-support": {
@@ -605,6 +616,7 @@
     "layout_symbol",
     "layout_raster",
     "layout_hillshade",
+    "layout_elevation",
     "layout_background"
   ],
   "layout_background": {
@@ -2401,6 +2413,31 @@
       "property-type": "constant"
     }
   },
+  "layout_elevation": {
+    "visibility": {
+      "type": "enum",
+      "values": {
+        "visible": {
+          "doc": "The layer is shown."
+        },
+        "none": {
+          "doc": "The layer is not shown."
+        }
+      },
+      "default": "visible",
+      "doc": "Whether this layer is displayed.",
+      "sdk-support": {
+        "basic functionality": {
+          "js": "todo",
+          "android": "todo",
+          "ios": "todo",
+          "macos": "todo"
+        },
+        "data-driven styling": {}
+      },
+      "property-type": "constant"
+    }
+  },
   "filter": {
     "type": "array",
     "value": "*",
@@ -3605,6 +3642,7 @@
     "paint_symbol",
     "paint_raster",
     "paint_hillshade",
+    "paint_elevation",
     "paint_background"
   ],
   "paint_fill": {
@@ -5678,6 +5716,7 @@
       "property-type": "data-constant"
     }
   },
+  "paint_elevation": {},
   "paint_background": {
     "background-color": {
       "type": "color",

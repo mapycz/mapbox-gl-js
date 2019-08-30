@@ -5,7 +5,6 @@ import CompoundExpression from './compound_expression';
 import type { Expression } from './expression.js';
 
 function isFeatureConstant(e: Expression) {
-    console.log('e', e);
     if (e instanceof CompoundExpression) {
         if (e.name === 'get' && e.args.length === 1) {
             return false;

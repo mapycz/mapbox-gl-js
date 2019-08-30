@@ -11,11 +11,12 @@ import type { Type } from '../types';
 
 export default class ImageExpression implements Expression {
     type: Type;
-    name: string;
+    input: string;
 
-    constructor(name: string) {
+    constructor(input: Expression) {
+        console.log('input', input);
         this.type = ImageType;
-        this.name = name;
+        this.input = input;
     }
 
     static parse(args: $ReadOnlyArray<mixed>, context: ParsingContext): ?Expression {
@@ -23,20 +24,24 @@ export default class ImageExpression implements Expression {
             return context.error(`Expected two arguments.`);
         }
 
-        const imageName = args[1];
+        // console.log('args', args);
 
-        console.log('parse', args, context);
-        console.log('new ImageExpression(imageName)', new ImageExpression(imageName));
-        return new ImageExpression(imageName);
+        const name = context.parse(args[1], 1, StringType);
+        console.log('name', name);
+        // if (!name) return null;
+
+        // console.log('parse', args, context);
+        return new ImageExpression(name);
     }
 
     evaluate(ctx: EvaluationContext) {
-        console.log('evaluate', ctx);
+        console.log('evaluate', this.input, this.input.evaluate(ctx));
+        return this.input.evaluate(ctx);
     }
 
     eachChild(fn: (Expression) => void) {
-        console.log('each child', fn);
-        fn(this.name);
+        // console.log('each child', this.input, fn);
+        fn(this.input);
     }
 
     possibleOutputs() {
@@ -46,6 +51,6 @@ export default class ImageExpression implements Expression {
     }
 
     serialize() {
-        return ["image", this.name];
+        return ["image", this.input];
     }
 }

@@ -29,7 +29,9 @@ export default function createGrid(count: number): [RasterBoundsArray, TriangleI
     const bound = EXTENT + step / 2;
     for (let y = 0; y < bound; y += step) {
         for (let x = 0; x < bound; x += step) {
-            boundsArray.emplaceBack(x, y, x, y);
+            const xi = Math.round(x);
+            const yi = Math.round(y);
+            boundsArray.emplaceBack(xi, yi, xi, yi);
         }
     }
     for (let j = 0; j < count - 1; j++) {

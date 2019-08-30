@@ -231,7 +231,7 @@ test('transform', (t) => {
         t.equal(transform.pitch, 0);
 
         transform.pitch = 90;
-        t.equal(transform.pitch, 60);
+        t.equal(transform.pitch, transform.maxPitch);
 
         t.end();
     });

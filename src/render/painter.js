@@ -217,7 +217,12 @@ class Painter {
         quadTriangleIndices.emplaceBack(2, 1, 3);
         this.quadTriangleIndexBuffer = context.createIndexBuffer(quadTriangleIndices);
 
-        const [triangleGridArray, triangleGridIndices] = createGrid(128);
+        // Terrain rendering grid is 129x129 cell grid, made by 130x130 points.
+        // 130 vertices map to 128 DEM data + 1px padding on both sides.
+        // DEM texture is padded (1, 1, 1, 1) and padding pixels are backfilled
+        // by neighboring tile edges. This way we achieve tile stitching as
+        // edge vertices from neighboring tiles evaluate to the same 3D point.
+        const [triangleGridArray, triangleGridIndices] = createGrid(129);
         this.triangleGridBuffer = context.createVertexBuffer(triangleGridArray, rasterBoundsAttributes.members);
         this.triangleGridIndexBuffer = context.createIndexBuffer(triangleGridIndices);
         this.triangleGridSegments = SegmentVector.simpleSegment(0, 0, triangleGridArray.length, triangleGridIndices.length);

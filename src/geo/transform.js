@@ -24,6 +24,7 @@ class Transform {
     lngRange: ?[number, number];
     latRange: ?[number, number];
     maxValidLatitude: number;
+    maxPitch: number;
     scale: number;
     width: number;
     height: number;
@@ -54,6 +55,7 @@ class Transform {
     constructor(minZoom: ?number, maxZoom: ?number, renderWorldCopies: boolean | void) {
         this.tileSize = 512; // constant
         this.maxValidLatitude = 85.051129; // constant
+        this.maxPitch = 85; // constant
 
         this._renderWorldCopies = renderWorldCopies === undefined ? true : renderWorldCopies;
         this._minZoom = minZoom || 0;
@@ -145,7 +147,7 @@ class Transform {
         return this._pitch / Math.PI * 180;
     }
     set pitch(pitch: number) {
-        const p = clamp(pitch, 0, 85) / 180 * Math.PI;
+        const p = clamp(pitch, 0, this.maxPitch) / 180 * Math.PI;
         if (this._pitch === p) return;
         this._unmodified = false;
         this._pitch = p;
@@ -156,7 +158,7 @@ class Transform {
         return this._fov / Math.PI * 180;
     }
     set fov(fov: number) {
-        fov = Math.max(0.01, Math.min(85, fov));
+        fov = Math.max(0.01, Math.min(this.maxPitch, fov));
         if (this._fov === fov) return;
         this._unmodified = false;
         this._fov = fov / 180 * Math.PI;

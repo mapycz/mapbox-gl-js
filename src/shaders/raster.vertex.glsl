@@ -25,6 +25,6 @@ void main() {
     vec4 dem = texture2D(u_dem, pos) * 255.0;
     // Convert encoded elevation value to meters
     dem.a = -1.0;
-    float elevation = dot(dem, u_dem_unpack) * 2.5; // Exaggerate, a bit.
+    float elevation = dot(dem, u_dem_unpack) * 2.0; // Exaggerate, a bit.
     gl_Position = u_matrix * vec4(a_pos, elevation, 1);
 }

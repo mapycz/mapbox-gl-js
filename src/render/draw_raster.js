@@ -63,7 +63,7 @@ function drawRaster(painter: Painter, sourceCache: SourceCache, layer: RasterSty
 
         context.activeTexture.set(gl.TEXTURE1);
 
-        if (parentTile && !elevation) {
+        if (parentTile) {
             parentTile.texture.bind(textureFilter, gl.CLAMP_TO_EDGE, gl.LINEAR_MIPMAP_NEAREST);
             parentScaleBy = Math.pow(2, parentTile.tileID.overscaledZ - tile.tileID.overscaledZ);
             parentTL = [tile.tileID.canonical.x * parentScaleBy % 1, tile.tileID.canonical.y * parentScaleBy % 1];

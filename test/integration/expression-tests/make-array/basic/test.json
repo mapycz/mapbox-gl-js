@@ -1,0 +1,14 @@
+{
+  "expression": ["[]", ["get", "x"], ["get", "y"]],
+  "inputs": [[{}, {"properties": {"x": 10, "y": 20}}]],
+  "expected": {
+    "compiled": {
+      "result": "success",
+      "isFeatureConstant": false,
+      "isZoomConstant": true,
+      "type": "array"
+    },
+    "outputs": [[10, 20]],
+    "serialized": ["[]", ["get", "x"], ["get", "y"]]
+  }
+}

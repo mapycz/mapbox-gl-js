@@ -3482,6 +3482,15 @@
             "macos": "0.9.0"
           }
         }
+      },
+      "[]": {
+        "doc": "Makes an array out of evaluated arguments.",
+        "group": "Math",
+        "sdk-support": {
+          "basic functionality": {
+            "js": "1.2.1"
+          }
+        }
       }
     }
   },
